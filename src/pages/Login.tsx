@@ -1,20 +1,24 @@
   import React, { useState } from 'react';
-  import { useNavigate } from 'react-router-dom';
-  import { FaGoogle, FaEnvelope, FaLock, FaSignInAlt } from 'react-icons/fa';
 
+  import { FaGoogle, FaEnvelope, FaLock, FaSignInAlt } from 'react-icons/fa';
+  import { useNavigate } from 'react-router-dom';
+  import { useAuth } from '../contexts/AuthContext';
   const Login = () => {
     const [email, setEmail] = useState('');
+
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const navigate = useNavigate();
-
+    const {login} = useAuth();
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       setLoading(true);
       setError('');
       try {
         // Add your authentication logic here
+        console.log(email, password);
+        await login(email, password);
         console.log('Login attempt with:', email, password);
         // For demo purposes, navigate to dashboard after "login"
         navigate('/dashboard');
