@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
-import { Search, Trophy, Calendar, Users, Globe } from 'lucide-react';
+import React, { useState } from "react";
+import axios from "axios";
+import { toast } from "react-hot-toast";
+import { Search, Trophy, Calendar, Users, Globe } from "lucide-react";
 
 interface Competition {
   id: number;
@@ -24,10 +26,17 @@ const competitions: Competition[] = [
     deadline: "April 15, 2024",
     participantsCount: 5000,
     prizePool: "$50,000",
-    description: "A worldwide competition to solve real-world problems using technology. Teams will work on innovative solutions in areas like sustainability, healthcare, and education.",
-    requirements: ["Open to all students", "Team size: 2-4 members", "Original project", "Demo required"],
-    image: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-    location: "Virtual"
+    description:
+      "A worldwide competition to solve real-world problems using technology. Teams will work on innovative solutions in areas like sustainability, healthcare, and education.",
+    requirements: [
+      "Open to all students",
+      "Team size: 2-4 members",
+      "Original project",
+      "Demo required",
+    ],
+    image:
+      "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+    location: "Virtual",
   },
   {
     id: 2,
@@ -37,10 +46,16 @@ const competitions: Competition[] = [
     deadline: "March 30, 2024",
     participantsCount: 3000,
     prizePool: "$25,000",
-    description: "The most prestigious mathematics competition for high school students. Participants will solve complex mathematical problems and compete with peers from around the world.",
-    requirements: ["High school students only", "National selection required", "Under 20 years old"],
-    image: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-    location: "London, UK"
+    description:
+      "The most prestigious mathematics competition for high school students. Participants will solve complex mathematical problems and compete with peers from around the world.",
+    requirements: [
+      "High school students only",
+      "National selection required",
+      "Under 20 years old",
+    ],
+    image:
+      "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+    location: "London, UK",
   },
   {
     id: 3,
@@ -50,23 +65,65 @@ const competitions: Competition[] = [
     deadline: "May 1, 2024",
     participantsCount: 2000,
     prizePool: "$30,000",
-    description: "Design innovative solutions for sustainable urban development. Focus areas include green architecture, renewable energy integration, and smart city planning.",
-    requirements: ["Architecture/Engineering students", "Portfolio submission", "Sustainability focus"],
-    image: "https://images.unsplash.com/photo-1518005020951-eccb494ad742?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-    location: "Hybrid"
-  }
+    description:
+      "Design innovative solutions for sustainable urban development. Focus areas include green architecture, renewable energy integration, and smart city planning.",
+    requirements: [
+      "Architecture/Engineering students",
+      "Portfolio submission",
+      "Sustainability focus",
+    ],
+    image:
+      "https://images.unsplash.com/photo-1518005020951-eccb494ad742?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+    location: "Hybrid",
+  },
 ];
 
 const Competitions = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedType, setSelectedType] = useState('all');
-  const [selectedLocation, setSelectedLocation] = useState('all');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedType, setSelectedType] = useState("all");
+  const [selectedLocation, setSelectedLocation] = useState("all");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedCompetition, setSelectedCompetition] = useState<any>(null);
+  const [formData, setFormData] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    motivation: "",
+  });
 
-  const filteredCompetitions = competitions.filter(competition => {
-    const matchesSearch = competition.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         competition.organizer.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = selectedType === 'all' || competition.type === selectedType;
-    const matchesLocation = selectedLocation === 'all' || competition.location === selectedLocation;
+  const handleRegister = (competition: any) => {
+    setSelectedCompetition(competition);
+    setIsModalOpen(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await axios.post("http://localhost:3000/api/competitions/register", {
+        competitionId: selectedCompetition.id,
+        ...formData,
+      });
+      toast.success("Successfully registered!");
+      setIsModalOpen(false);
+      setFormData({
+        fullName: "",
+        email: "",
+        phone: "",
+        motivation: "",
+      });
+    } catch (error) {
+      toast.error("Registration failed");
+    }
+  };
+
+  const filteredCompetitions = competitions.filter((competition) => {
+    const matchesSearch =
+      competition.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      competition.organizer.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesType =
+      selectedType === "all" || competition.type === selectedType;
+    const matchesLocation =
+      selectedLocation === "all" || competition.location === selectedLocation;
     return matchesSearch && matchesType && matchesLocation;
   });
 
@@ -74,8 +131,12 @@ const Competitions = () => {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Competitions & Challenges</h1>
-          <p className="text-gray-600">Showcase your skills and compete with talented individuals worldwide</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">
+            Competitions & Challenges
+          </h1>
+          <p className="text-gray-600">
+            Showcase your skills and compete with talented individuals worldwide
+          </p>
         </div>
 
         {/* Search and Filters */}
@@ -120,8 +181,11 @@ const Competitions = () => {
 
         {/* Competition Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredCompetitions.map(competition => (
-            <div key={competition.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+          {filteredCompetitions.map((competition) => (
+            <div
+              key={competition.id}
+              className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+            >
               <div className="h-48 overflow-hidden">
                 <img
                   src={competition.image}
@@ -131,14 +195,18 @@ const Competitions = () => {
               </div>
               <div className="p-6">
                 <div className="flex justify-between items-start mb-4">
-                  <h2 className="text-xl font-semibold text-gray-900">{competition.title}</h2>
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    {competition.title}
+                  </h2>
                   <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
                     {competition.type}
                   </span>
                 </div>
-                
-                <p className="text-gray-600 mb-4 line-clamp-2">{competition.description}</p>
-                
+
+                <p className="text-gray-600 mb-4 line-clamp-2">
+                  {competition.description}
+                </p>
+
                 <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-4">
                   <span className="flex items-center">
                     <Trophy className="h-4 w-4 mr-1 text-yellow-500" />
@@ -150,16 +218,19 @@ const Competitions = () => {
                   </span>
                   <span className="flex items-center">
                     <Users className="h-4 w-4 mr-1 text-blue-500" />
-                    {competition.participantsCount.toLocaleString()} participants
+                    {competition.participantsCount.toLocaleString()}{" "}
+                    participants
                   </span>
                   <span className="flex items-center">
                     <Globe className="h-4 w-4 mr-1 text-green-500" />
                     {competition.location}
                   </span>
                 </div>
-                
+
                 <div className="mb-4">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-2">Requirements:</h3>
+                  <h3 className="text-sm font-semibold text-gray-900 mb-2">
+                    Requirements:
+                  </h3>
                   <div className="flex flex-wrap gap-2">
                     {competition.requirements.map((req, index) => (
                       <span
@@ -171,8 +242,11 @@ const Competitions = () => {
                     ))}
                   </div>
                 </div>
-                
-                <button className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+
+                <button
+                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                  onClick={() => handleRegister(competition)}
+                >
                   Register Now
                 </button>
               </div>
@@ -180,6 +254,80 @@ const Competitions = () => {
           ))}
         </div>
       </div>
+
+      {isModalOpen && selectedCompetition && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h2 className="text-xl font-bold mb-4">
+              Register for {selectedCompetition.title}
+            </h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block mb-1">Full Name</label>
+                <input
+                  type="text"
+                  required
+                  className="w-full p-2 border rounded"
+                  value={formData.fullName}
+                  onChange={(e) =>
+                    setFormData({ ...formData, fullName: e.target.value })
+                  }
+                />
+              </div>
+              <div>
+                <label className="block mb-1">Email</label>
+                <input
+                  type="email"
+                  required
+                  className="w-full p-2 border rounded"
+                  value={formData.email}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
+                />
+              </div>
+              <div>
+                <label className="block mb-1">Phone</label>
+                <input
+                  type="tel"
+                  required
+                  className="w-full p-2 border rounded"
+                  value={formData.phone}
+                  onChange={(e) =>
+                    setFormData({ ...formData, phone: e.target.value })
+                  }
+                />
+              </div>
+              <div>
+                <label className="block mb-1">Motivation</label>
+                <textarea
+                  required
+                  className="w-full p-2 border rounded"
+                  value={formData.motivation}
+                  onChange={(e) =>
+                    setFormData({ ...formData, motivation: e.target.value })
+                  }
+                />
+              </div>
+              <div className="flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-4 py-2 text-gray-600 bg-gray-100 rounded"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded"
+                >
+                  Register
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

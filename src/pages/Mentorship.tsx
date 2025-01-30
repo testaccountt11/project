@@ -1,6 +1,16 @@
-import React, { useState } from 'react';
-import { Search, Star, Clock, BookOpen, GraduationCap, MapPin, Calendar } from 'lucide-react';
-
+import React, { useState } from "react";
+import { mentorshipService } from "../services/mentorshipService";
+import { toast } from "react-hot-toast";
+import {
+  Search,
+  Star,
+  Clock,
+  BookOpen,
+  GraduationCap,
+  MapPin,
+  Calendar,
+} from "lucide-react";
+import { Dialog } from "@headlessui/react";
 interface Mentor {
   id: number;
   name: string;
@@ -17,6 +27,13 @@ interface Mentor {
   avatar: string;
   languages: string[];
 }
+interface BookingForm {
+  mentorId: number;
+  date: string;
+  time: string;
+  topic: string;
+  message: string;
+}
 
 const mentors: Mentor[] = [
   {
@@ -32,8 +49,9 @@ const mentors: Mentor[] = [
     location: "London, UK",
     bio: "Former Cambridge University professor specializing in advanced mathematics. Experienced in preparing students for university admissions and international competitions.",
     education: "Ph.D. in Mathematics, Cambridge University",
-    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-    languages: ["English", "French"]
+    avatar:
+      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
+    languages: ["English", "French"],
   },
   {
     id: 2,
@@ -48,8 +66,9 @@ const mentors: Mentor[] = [
     location: "Remote",
     bio: "Certified IELTS examiner with extensive experience in preparing students for academic English examinations. Specializes in writing and speaking skills.",
     education: "M.A. in Applied Linguistics, Oxford University",
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-    languages: ["English", "Spanish"]
+    avatar:
+      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
+    languages: ["English", "Spanish"],
   },
   {
     id: 3,
@@ -64,31 +83,88 @@ const mentors: Mentor[] = [
     location: "Remote",
     bio: "Tech industry veteran with experience at top companies. Passionate about helping students master computer science concepts and prepare for technical interviews.",
     education: "Ph.D. in Computer Science, Stanford University",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-    languages: ["English", "Mandarin"]
-  }
+    avatar:
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
+    languages: ["English", "Mandarin"],
+  },
 ];
 
 const Mentorship = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedSpecialization, setSelectedSpecialization] = useState('all');
-  const [selectedLocation, setSelectedLocation] = useState('all');
+  const [isBookingOpen, setIsBookingOpen] = useState(false);
+  const [selectedMentor, setSelectedMentor] = useState<Mentor | null>(null);
+  const [bookingForm, setBookingForm] = useState<BookingForm>({
+    mentorId: 0,
+    date: "",
+    time: "",
+    topic: "",
+    message: "",
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const filteredMentors = mentors.filter(mentor => {
-    const matchesSearch = mentor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         mentor.specialization.some(s => s.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesSpecialization = selectedSpecialization === 'all' || 
-                                 mentor.specialization.includes(selectedSpecialization);
-    const matchesLocation = selectedLocation === 'all' || mentor.location === selectedLocation;
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedSpecialization, setSelectedSpecialization] = useState("all");
+  const [selectedLocation, setSelectedLocation] = useState("all");
+
+  const filteredMentors = mentors.filter((mentor) => {
+    const matchesSearch =
+      mentor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      mentor.specialization.some((s) =>
+        s.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    const matchesSpecialization =
+      selectedSpecialization === "all" ||
+      mentor.specialization.includes(selectedSpecialization);
+    const matchesLocation =
+      selectedLocation === "all" || mentor.location === selectedLocation;
     return matchesSearch && matchesSpecialization && matchesLocation;
   });
+  const handleBooking = (mentor: Mentor) => {
+    setSelectedMentor(mentor);
+    setBookingForm((prev) => ({ ...prev, mentorId: mentor.id }));
+    setIsBookingOpen(true);
+  };
+
+  const submitBooking = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      const scheduledTime = `${bookingForm.date}T${bookingForm.time}:00`;
+      await mentorshipService.scheduleSession({
+        mentorId: bookingForm.mentorId,
+        topic: bookingForm.topic,
+        description: bookingForm.message,
+        scheduledTime,
+        duration: 60,
+      });
+
+      toast.success("Session booked successfully!");
+      setIsBookingOpen(false);
+      setBookingForm({
+        mentorId: 0,
+        date: "",
+        time: "",
+        topic: "",
+        message: "",
+      });
+    } catch (error) {
+      toast.error("Failed to book session");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Find Your Perfect Mentor</h1>
-          <p className="text-gray-600">Connect with experienced mentors who can guide you towards your academic goals</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">
+            Find Your Perfect Mentor
+          </h1>
+          <p className="text-gray-600">
+            Connect with experienced mentors who can guide you towards your
+            academic goals
+          </p>
         </div>
 
         {/* Search and Filters */}
@@ -132,8 +208,11 @@ const Mentorship = () => {
 
         {/* Mentor Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredMentors.map(mentor => (
-            <div key={mentor.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+          {filteredMentors.map((mentor) => (
+            <div
+              key={mentor.id}
+              className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+            >
               <div className="p-6">
                 <div className="flex items-center mb-4">
                   <img
@@ -142,7 +221,9 @@ const Mentorship = () => {
                     className="w-16 h-16 rounded-full object-cover mr-4"
                   />
                   <div>
-                    <h2 className="text-xl font-semibold text-gray-900">{mentor.name}</h2>
+                    <h2 className="text-xl font-semibold text-gray-900">
+                      {mentor.name}
+                    </h2>
                     <p className="text-gray-600">{mentor.title}</p>
                   </div>
                 </div>
@@ -152,7 +233,9 @@ const Mentorship = () => {
                     <Star className="h-4 w-4 text-yellow-400" />
                     <span className="ml-1 text-gray-700">{mentor.rating}</span>
                   </div>
-                  <span className="text-gray-500">({mentor.reviewCount} reviews)</span>
+                  <span className="text-gray-500">
+                    ({mentor.reviewCount} reviews)
+                  </span>
                 </div>
 
                 <p className="text-gray-700 mb-4">{mentor.bio}</p>
@@ -177,7 +260,9 @@ const Mentorship = () => {
                 </div>
 
                 <div className="mb-4">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-2">Specializations:</h3>
+                  <h3 className="text-sm font-semibold text-gray-900 mb-2">
+                    Specializations:
+                  </h3>
                   <div className="flex flex-wrap gap-2">
                     {mentor.specialization.map((spec, index) => (
                       <span
@@ -191,7 +276,9 @@ const Mentorship = () => {
                 </div>
 
                 <div className="mb-4">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-2">Languages:</h3>
+                  <h3 className="text-sm font-semibold text-gray-900 mb-2">
+                    Languages:
+                  </h3>
                   <div className="flex flex-wrap gap-2">
                     {mentor.languages.map((lang, index) => (
                       <span
@@ -205,8 +292,14 @@ const Mentorship = () => {
                 </div>
 
                 <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
-                  <span className="text-2xl font-bold text-gray-900">{mentor.hourlyRate}</span>
-                  <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                  <span className="text-2xl font-bold text-gray-900">
+                    {mentor.hourlyRate}
+                  </span>
+                  <button
+                    onClick={() => handleBooking(mentor)}
+                    disabled={isSubmitting || isBookingOpen}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                  >
                     Book Session
                   </button>
                 </div>
@@ -215,6 +308,111 @@ const Mentorship = () => {
           ))}
         </div>
       </div>
+      <Dialog
+        open={isBookingOpen}
+        onClose={() => setIsBookingOpen(false)}
+        className="relative z-50"
+      >
+        <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <Dialog.Panel className="bg-white rounded-lg p-6 max-w-sm w-full">
+            <Dialog.Title className="text-lg font-bold mb-4">
+              Book Session with {selectedMentor?.name}
+            </Dialog.Title>
+
+            <form onSubmit={submitBooking}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Date
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    value={bookingForm.date}
+                    onChange={(e) =>
+                      setBookingForm((prev) => ({
+                        ...prev,
+                        date: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Time
+                  </label>
+                  <input
+                    type="time"
+                    required
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    value={bookingForm.time}
+                    onChange={(e) =>
+                      setBookingForm((prev) => ({
+                        ...prev,
+                        time: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Topic
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    value={bookingForm.topic}
+                    onChange={(e) =>
+                      setBookingForm((prev) => ({
+                        ...prev,
+                        topic: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Message
+                  </label>
+                  <textarea
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    rows={3}
+                    value={bookingForm.message}
+                    onChange={(e) =>
+                      setBookingForm((prev) => ({
+                        ...prev,
+                        message: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end space-x-3">
+                <button
+                  type="button"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                  onClick={() => setIsBookingOpen(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                >
+                  Book Session
+                </button>
+              </div>
+            </form>
+          </Dialog.Panel>
+        </div>
+      </Dialog>
     </div>
   );
 };
